@@ -1,12 +1,12 @@
 module MDBTools
-  
+
   extend self
-  
+
   DELIMITER = '::'
   LINEBREAK = "\n"
   SANITIZER = /^\w\.\_/ # dumb filter for SQL arguments
-  BACKENDS = %w{ access mysql oracle postgres sybase }
-  
+  BACKENDS  = %w{ access mysql oracle postgres sybase }
+
   # test for existence and usability of file
   def check_file(mdb_file)
     raise ArgumentError, "File not found: #{mdb_file}" unless File.exist?(mdb_file)
@@ -16,7 +16,7 @@ module MDBTools
     end
     mdb_file
   end
-  
+
   # runs mdb_version.  A blank version indicates an unusable file
   def valid_file?(file)
     !mdb_version(file).blank?
@@ -34,7 +34,7 @@ module MDBTools
     end
     table_name
   end
-  
+
   # uses mdb-tables tool to return an array of table names.
   # You can filter the tables by passing an array of strings as
   # either the :exclude or :include key to the options hash.
@@ -49,45 +49,45 @@ module MDBTools
     return `mdb-tables -1 #{mdb_file}`.split(LINEBREAK) if not (included || excluded)
     raise ArgumentError if (options[:include] && options[:exclude])
     if options[:exclude]
-      regex = Regexp.new options[:exclude].to_a.join('|') 
-      tables = `mdb-tables -1 #{mdb_file}`.split(LINEBREAK).delete_if { |name| name =~ regex }
+      regex  = Regexp.new options[:exclude].to_a.join('|')
+      tables = `mdb-tables -1 #{mdb_file}`.split(LINEBREAK).delete_if {|name| name =~ regex}
     end
     if options[:include]
-      regex = Regexp.new options[:include].to_a.join('|')
-      tables = `mdb-tables -1 #{mdb_file}`.split(LINEBREAK).select { |name| name =~ regex }
+      regex  = Regexp.new options[:include].to_a.join('|')
+      tables = `mdb-tables -1 #{mdb_file}`.split(LINEBREAK).select {|name| name =~ regex}
     end
     tables
   end
-  
+
   # takes an array of field names
   # and some conditions to append in a WHERE clause
-  def sql_select_where(mdb_file, table_name, attributes = nil, conditions=nil)
+  def sql_select_where(mdb_file, table_name, attributes = nil, conditions = nil)
     if attributes.respond_to?(:join)
-      fields = attributes.join(' ') 
+      fields = attributes.join(' ')
     else
-      attributes ||= '*'
+      fields ||= '*'
     end
     where = conditions ? "where #{conditions}" : ""
-    sql = "select #{attributes} from #{table_name} #{where}"
+    sql   = "select #{fields} from #{table_name} #{where}"
     mdb_sql(mdb_file, sql)
   end
-  
+
   # forks an IO.popen running mdb-sql and discarding STDERR to /dev/null.
   # The sql argument should be a single statement, 'cause I don't know
   # what will happen otherwise.  mdb-sql uses "\ngo" as the command terminator.
-  def mdb_sql(mdb_file,sql)
+  def mdb_sql(mdb_file, sql)
     # libMDB barks on stderr quite frequently, so discard stderr entirely
     command = "mdb-sql -Fp -d '#{DELIMITER}' #{mdb_file} 2> /dev/null \n"
-    array = []
+    array   = []
     IO.popen(command, 'r+') do |pipe|
       pipe << "#{sql}\ngo\n"
       pipe.close_write
       pipe.readline
       fields = pipe.readline.chomp.split(DELIMITER)
-      
-      hash = {}
-      field_count = 0
-      column_count = 0
+
+      hash          = {}
+      field_count   = 0
+      column_count  = 0
       premature_eol = 0
       pipe.each do |row|
         if field_count == 0
@@ -95,7 +95,7 @@ module MDBTools
         end
         columns = row.chomp.split(DELIMITER)
 
-        column_count += columns.length
+        column_count  += columns.length
         premature_eol += 1 if column_count < fields.length
         columns.each do |col|
           if hash.has_key?(fields[field_count].to_s)
@@ -103,13 +103,13 @@ module MDBTools
           else
             hash[fields[field_count]] = col
           end
-          if field_count >= fields.length-1
+          if field_count >= fields.length - 1
             array << hash
-            field_count = 0
-            column_count = 0
+            field_count   = 0
+            column_count  = 0
             premature_eol = 0
           else
-            if field_count < column_count-premature_eol  
+            if field_count < column_count - premature_eol
               field_count += 1
             end
           end
@@ -122,10 +122,10 @@ module MDBTools
   # uses mdb-sql to retrieve an array of the table's field names
   def field_names_for(mdb_file, table)
     command = "echo 'select * from #{table} where 1 = 2' | mdb-sql -Fp -d '#{DELIMITER}' #{mdb_file}"
-    fields = `#{command}`.chomp.sub(/^\n+/, '')
+    fields  = `#{command}`.chomp.sub(/^\n+/, '')
     fields.split(DELIMITER)
   end
-  
+
 
   # takes a hash where keys are column names, values are search values
   # and returns a string that you can use in a WHERE clause
@@ -140,7 +140,7 @@ module MDBTools
   #
   # the condition phrases are all ANDed together before insertion into a WHERE clause
   def compile_conditions(conditions_hash)
-    conditions = conditions_hash.sort_by{|k,v| k.to_s}.map do |column_name, value|
+    conditions_hash.sort_by {|k, v| k.to_s}.map do |column_name, value|
       if block_given?
         yield column_name, value
       else
@@ -159,10 +159,10 @@ module MDBTools
   # which correspond rather directly to the underlying mdb-export arguments.
   # Defaults to :format => 'sql', :headers => false, :sanitize => true
   def mdb_export(mdb_file, table_name, options = {})
-    defaults = {  :format => 'mysql',
-                  :headers => false,
-                  :sanitize => true  }
-    options = defaults.merge options
+    defaults = {:format   => 'mysql',
+                :headers  => false,
+                :sanitize => true}
+    options  = defaults.merge options
 
     args = []
     if options[:delimiter]
@@ -183,12 +183,12 @@ module MDBTools
   # wrapper for DESCRIBE TABLE using mdb-sql
   def describe_table(mdb_file, table_name)
     command = "describe table \"#{table_name}\""
-    mdb_sql(mdb_file,command)
+    mdb_sql(mdb_file, command)
   end
 
   # wrapper for mdb-schema, returns SQL statements
   def mdb_schema(mdb_file, table_name)
-    schema = `mdb-schema -T #{table_name.dump} #{mdb_file}`
+    `mdb-schema -T #{table_name.dump} #{mdb_file} --drop-table`
   end
 
   # convenience method for mdb_export to output CSV with headers.
@@ -197,8 +197,8 @@ module MDBTools
   end
 
   def delimited_to_arrays(text)
-    text.gsub!(/\r\n/,' ')
-    text.split(LINEBREAK).collect { |row| row.split(DELIMITER)}
+    text.gsub!(/\r\n/, ' ')
+    text.split(LINEBREAK).collect {|row| row.split(DELIMITER)}
   end
 
   def arrays_to_hashes(headers, arrays)
@@ -217,7 +217,7 @@ module MDBTools
   # helper to turn table names into standard format method names.
   # Inside, it's just ActionView::Inflector.underscore
   def methodize(table_name)
-    ActiveSupport::Inflector.underscore table_name.gsub(' ','_')
+    ActiveSupport::Inflector.underscore table_name.gsub(' ', '_')
   end
 
   def backends
@@ -233,18 +233,18 @@ module MDBTools
   # Make it so.
   def mdb_truth(value)
     case value
-    when false
-      0
-    when true
-      1
-    when 0
-      0
-    when 1
-      1
-    when "0"
-      0
-    when "1"
-      1
+      when false
+        0
+      when true
+        1
+      when 0
+        0
+      when 1
+        1
+      when "0"
+        0
+      when "1"
+        1
     end
   end
 
