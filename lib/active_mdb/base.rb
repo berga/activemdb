@@ -70,7 +70,7 @@ module ActiveMDB
       #
       # mdb-sql doesn't implement LIMIT yet, so this method pulls all results and
       # calls Array#first on them.  Ooky.
-      def find_first(conditions_hash)
+      def find_first(conditions_hash={})
         # rekey_hash(conditions_hash)
         find_from_hash(conditions_hash).first
       end
