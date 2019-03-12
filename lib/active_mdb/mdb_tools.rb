@@ -21,11 +21,11 @@ module MDBTools
   def valid_file?(file)
     !mdb_version(file).blank?
   end
-  
+
   def mdb_version(file)
     `mdb-ver #{file} 2> /dev/null`.chomp
   end
-  
+
   # raises an ArgumentError unless the mdb file contains a table with the specified name.
   # returns the table name, otherwise.
   def check_table(mdb_file, table_name)
@@ -47,7 +47,7 @@ module MDBTools
   def mdb_tables(mdb_file, options = {})
     included, excluded = options[:include], options[:exclude]
     return `mdb-tables -1 #{mdb_file}`.split(LINEBREAK) if not (included || excluded)
-    raise ArgumentError if (options[:include] && options [:exclude])
+    raise ArgumentError if (options[:include] && options[:exclude])
     if options[:exclude]
       regex = Regexp.new options[:exclude].to_a.join('|') 
       tables = `mdb-tables -1 #{mdb_file}`.split(LINEBREAK).delete_if { |name| name =~ regex }
@@ -144,16 +144,16 @@ module MDBTools
       if block_given?
         yield column_name, value
       else
-        "#{column_name} like '%#{value}%'"        
+        "#{column_name} like '%#{value}%'"
       end
     end.join(' AND ')
   end
-  
+
   # really dumb way to get a count.  Does a SELECT and call size on the results
   def faked_count(*args)
     sql_select_where(*args).size
   end
-  
+
   # convenience method, not really used with ActiveMDB.  
   # Valid options are :format, :headers, and :sanitize, 
   # which correspond rather directly to the underlying mdb-export arguments.
@@ -163,7 +163,7 @@ module MDBTools
                   :headers => false,
                   :sanitize => true  }
     options = defaults.merge options
-    
+
     args = []
     if options[:delimiter]
       args << "-d #{options[:delimiter].dump}"
@@ -174,18 +174,18 @@ module MDBTools
     else
       raise ArgumentError, "Unknown format:  #{options[:format]}"
     end
-    
+
     args << "-H " unless options[:headers] == true
-    args << "-S" unless options[:sanitize] == false
+    # args << "-S" unless options[:sanitize] == false
     `mdb-export #{args.join} #{mdb_file} #{table_name.to_s.dump}`
   end
-  
+
   # wrapper for DESCRIBE TABLE using mdb-sql
   def describe_table(mdb_file, table_name)
     command = "describe table \"#{table_name}\""
     mdb_sql(mdb_file,command)
   end
-  
+
   # wrapper for mdb-schema, returns SQL statements
   def mdb_schema(mdb_file, table_name)
     schema = `mdb-schema -T #{table_name.dump} #{mdb_file}`
@@ -195,12 +195,12 @@ module MDBTools
   def table_to_csv(mdb_file, table_name)
     mdb_export(mdb_file, table_name, :format => 'csv', :headers => true)
   end
-  
+
   def delimited_to_arrays(text)
     text.gsub!(/\r\n/,' ')
     text.split(LINEBREAK).collect { |row| row.split(DELIMITER)}
   end
-  
+
   def arrays_to_hashes(headers, arrays)
     arrays.collect do |record|
       record_hash = Hash.new
@@ -212,23 +212,23 @@ module MDBTools
       record_hash
     end
   end
-  
+
 
   # helper to turn table names into standard format method names.
   # Inside, it's just ActionView::Inflector.underscore
   def methodize(table_name)
     ActiveSupport::Inflector.underscore table_name.gsub(' ','_')
   end
-  
+
   def backends
     BACKENDS
   end
-  
+
   # poor, weakly sanitizing gsub!.
   def sanitize!(string)
     string.gsub!(SANITIZER, '')
   end
-  
+
   # mdb-tools recognizes 1 and 0 as the boolean values.
   # Make it so.
   def mdb_truth(value)
@@ -247,5 +247,5 @@ module MDBTools
       1
     end
   end
-  
+
 end

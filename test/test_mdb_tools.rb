@@ -48,7 +48,7 @@ class MDBToolsTest < Test::Unit::TestCase
     assert_equal TEST_TABLES, tables1
 
     assert_raises( ArgumentError) { mdb_tables(TEST_DB, :include => [], :exclude => []) }
-    tables4 = mdb_tables(TEST_DB, :exclude => 'Room')
+    tables4 = mdb_tables(TEST_DB, :exclude => ['Room'])
     assert_equal %w{Computer Employee Inventory}, tables4
   end
   
@@ -99,7 +99,7 @@ class MDBToolsTest < Test::Unit::TestCase
   
   def test_sql_select_where
     yo = {"Department"=>"Engineering", "Gender"=>"F", "Room"=>"6044", "Title"=>"Programmer", "Emp_Id"=>"1000", "First_Name"=>"Yolanda", "Last_Name"=>"Torbati"}
-    assert_equal yo, sql_select_where(TEST_DB, 'Employee', ['*'], "First_Name LIKE 'Yolanda'" ).first
+    assert_equal yo, sql_select_where(TEST_DB, 'Employee', '*', "First_Name LIKE 'Yolanda'" ).first
   end
   
   def test_compile_conditions
@@ -117,7 +117,7 @@ class MDBToolsTest < Test::Unit::TestCase
   
   def test_export_table_to_sql
     # this test is dependent on specific content in the sample database
-    export = mdb_export(TEST_DB, 'Computer', :format => 'sql').split(LINEBREAK)
+    export = mdb_export(TEST_DB, 'Computer', :format => 'mysql').split(LINEBREAK)
     assert_equal 172, export.size
     assert export.first =~ /INSERT INTO.*MITSUBISHI.*HL6605ATK/
   end

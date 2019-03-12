@@ -14,7 +14,6 @@ begin
     p.url = 'http://activemdb.rubyforge.org/'
     p.ignore_pattern = /^(\.git).+/
     p.test_pattern = "test/test_*.rb"
-    p.runtime_dependencies = ["fastercsv >=1.2.3"]
   end
 rescue
   "(ignored echoe gemification, as you don't have the Right Stuff)"

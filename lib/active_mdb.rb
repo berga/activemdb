@@ -2,6 +2,7 @@ $:.unshift(File.dirname(__FILE__))
 
 require 'active_mdb/version'
 require 'rubygems'
+require 'active_support'
 require 'active_support/core_ext'
 require 'active_mdb/mdb_tools'
 load 'active_mdb/mdb.rb'
