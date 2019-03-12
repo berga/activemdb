@@ -34,5 +34,9 @@ class TableTest < Test::Unit::TestCase
     assert_kind_of Array, a_names
     assert_kind_of @employee_class, a_names.first
     assert_equal 2, a_names.size
+    room_6042 = @employee_class.find_all(:Room => 6042)
+    assert_kind_of Array, room_6042
+    assert_kind_of @employee_class, room_6042.first
+    assert_equal 1, room_6042.size
   end
 end
