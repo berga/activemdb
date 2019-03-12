@@ -110,8 +110,8 @@ module ActiveMDB
 
       # supply a conditions string that would nestle gently in a 
       # WHERE clause, after the WHERE but before the.
-      def find_where(conditions)
-        MDBTools.sql_select_where(mdb_file, table_name, nil, conditions).collect! {|record| instantiate(record)}
+      def find_where(conditions, attributes = nil)
+        MDBTools.sql_select_where(mdb_file, table_name, attributes, conditions).collect! {|record| instantiate(record)}
       end
 
       # takes a hash where the keys are column names (string or symbol)
