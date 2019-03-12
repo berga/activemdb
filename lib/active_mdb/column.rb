@@ -1,13 +1,13 @@
 class Column
   include MDBTools
-  
+
   attr_reader :method_name, :name, :type, :size
-  
+
   def initialize(name, type, size)
     @name, @type = name, type
     @method_name, @size = methodize(name), size.to_i
   end
-  
+
   # returns a new Column from a hash with the keys: 
   # 'Column Name', 'Type', and 'Size'
   def self.new_from_describe(describe_hash)
@@ -19,16 +19,17 @@ class Column
   def klass
     case type
       when 'Text', 'Character'  then String
-      when 'Long Integer'       then Fixnum
+      when 'Long Integer'       then Integer
       when 'Double'             then Float
       when 'Currency', 'Float'  then Float
+      when 'DateTime'           then DateTime
       when 'DateTime (Short)'   then Time
       when 'Boolean'            then Object
       when 'Decimal'            then BigDecimal
       when 'Binary'             then String
     end
   end
-  
+
   # Casts value (which is a String) to an appropriate instance.
   # Totally borrowed from ActiveRecord
   def type_cast(value)
@@ -38,6 +39,7 @@ class Column
       when 'Long Integer'       then value.to_i rescue value ? 1 : 0
       when 'Currency', 'Float'  then value.to_f
       when 'Double'             then value.to_f
+      when 'DateTime'           then self.class.string_to_time(value)
       when 'DateTime (Short)'   then self.class.string_to_time(value)
       when 'Boolean'            then self.class.value_to_boolean(value)
       when 'Decimal'            then self.class.value_to_decimal(value)
@@ -45,11 +47,11 @@ class Column
       else value
     end
   end
-  
+
   def self.string_to_time(string)
     string
   end
-  
+
   # provided any argument, returns the mdb-tools version 
   # of truth (which is to say, 1 or 0)
   def self.value_to_boolean(value)
@@ -59,11 +61,11 @@ class Column
       %w(true t 1).include?(value.to_s.downcase)
     end
   end
-  
+
   # Are you a Boolean?
   def boolean?
     self.type == 'Boolean'
   end
-  
-  
+
+
 end

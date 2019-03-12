@@ -1,3 +1,5 @@
+require 'open3'
+
 module MDBTools
 
   extend self
@@ -77,44 +79,51 @@ module MDBTools
   # what will happen otherwise.  mdb-sql uses "\ngo" as the command terminator.
   def mdb_sql(mdb_file, sql)
     # libMDB barks on stderr quite frequently, so discard stderr entirely
-    command = "mdb-sql -Fp -d '#{DELIMITER}' #{mdb_file} 2> /dev/null \n"
+    command = "mdb-sql -Fp -d '#{DELIMITER}' #{mdb_file}"
+    query = "#{sql}\ngo\n"
     array   = []
-    IO.popen(command, 'r+') do |pipe|
-      pipe << "#{sql}\ngo\n"
-      pipe.close_write
-      pipe.readline
-      fields = pipe.readline.chomp.split(DELIMITER)
+    Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
+      stdin.puts query
+      stdin.close
+      begin
+        stdout.readline
+        fields = stdout.readline.chomp.split(DELIMITER)
 
-      hash          = {}
-      field_count   = 0
-      column_count  = 0
-      premature_eol = 0
-      pipe.each do |row|
-        if field_count == 0
-          hash = {}
-        end
-        columns = row.chomp.split(DELIMITER)
-
-        column_count  += columns.length
-        premature_eol += 1 if column_count < fields.length
-        columns.each do |col|
-          if hash.has_key?(fields[field_count].to_s)
-            hash[fields[field_count]] = hash[fields[field_count]] + " " + col
-          else
-            hash[fields[field_count]] = col
+        hash          = {}
+        field_count   = 0
+        column_count  = 0
+        premature_eol = 0
+        stdout.each do |row|
+          if field_count == 0
+            hash = {}
           end
-          if field_count >= fields.length - 1
-            array << hash
-            field_count   = 0
-            column_count  = 0
-            premature_eol = 0
-          else
-            if field_count < column_count - premature_eol
-              field_count += 1
+          columns = row.chomp.split(DELIMITER)
+
+          column_count  += columns.length
+          premature_eol += 1 if column_count < fields.length
+          columns.each do |col|
+            if hash.has_key?(fields[field_count].to_s)
+              hash[fields[field_count]] = hash[fields[field_count]] + " " + col
+            else
+              hash[fields[field_count]] = col
+            end
+            if field_count >= fields.length - 1
+              array << hash
+              field_count   = 0
+              column_count  = 0
+              premature_eol = 0
+            else
+              if field_count < column_count - premature_eol
+                field_count += 1
+              end
             end
           end
         end
+      rescue EOFError
+        $stderr << "Error executing mdb_sql\n#{command}\n#{query}\n#{stderr.read}"
       end
+      # will block until the command finishes; returns status that responds to .success? etc
+      wait_thr.value
     end
     array
   end

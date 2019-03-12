@@ -129,7 +129,7 @@ module ActiveMDB
           column = column_for_method(column_name) || column_for_field(column_name)
           raise ArgumentError, "No column corresponding to #{column_name}" unless column
           case column.klass.to_s
-            when 'Fixnum', 'Float'
+            when 'Float', 'Integer', 'BigDecimal'
               "#{column.name} = #{value}"
             when 'String'
               "#{column.name} LIKE '%#{value}%'"
