@@ -80,7 +80,7 @@ module MDBTools
   def mdb_sql(mdb_file, sql)
     # libMDB barks on stderr quite frequently, so discard stderr entirely
     command = "mdb-sql -Fp -d '#{DELIMITER}' #{mdb_file}"
-    query = "#{sql}\ngo\n"
+    query   = "#{sql}\ngo\n"
     array   = []
     Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
       stdin.puts query
@@ -118,6 +118,9 @@ module MDBTools
               end
             end
           end
+        end
+        if field_count > 0
+          array << hash
         end
       rescue EOFError
         $stderr << "Error executing mdb_sql\n#{command}\n#{query}\n#{stderr.read}"
