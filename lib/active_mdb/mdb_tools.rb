@@ -65,7 +65,7 @@ module MDBTools
   # and some conditions to append in a WHERE clause
   def sql_select_where(mdb_file, table_name, attributes = nil, conditions = nil)
     if attributes.respond_to?(:join)
-      fields = attributes.join(' ')
+      fields = attributes.join(',')
     else
       fields ||= '*'
     end
