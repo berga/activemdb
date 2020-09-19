@@ -1,3 +1,7 @@
+== 0.3.0 / 2020-09-19
+
+Rails 6 compat
+
 == 0.2.3 / 2008-08-04
 
 Patches from kind folks.

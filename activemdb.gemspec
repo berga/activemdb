@@ -17,9 +17,9 @@ Gem::Specification.new do |gem|
   gem.test_files = `git ls-files -- test/*`.split("\n")
   gem.platform = Gem::Platform::RUBY
   gem.require_paths = ["lib"]
-  gem.required_rubygems_version = Gem::Requirement.new(">= 1.8.15")
+  gem.required_rubygems_version = Gem::Requirement.new(">= 2.0.0")
 
-  gem.add_dependency("activesupport", "< 6")
+  gem.add_dependency("activesupport", "~> 6.0.1")
 
   gem.add_development_dependency("rake")
   gem.add_development_dependency("echoe")
